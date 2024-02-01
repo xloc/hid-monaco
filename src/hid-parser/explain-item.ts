@@ -1,4 +1,4 @@
-import { globalItemTagDocMapping, itemTypeDocMapping, localItemTagDocMapping, mainItemTagDocMapping } from "./docs";
+import { UsagePage, globalItemTagDocMapping, itemTypeDocMapping, localItemTagDocMapping, mainItemTagDocMapping, usageDataMapping, usagePageDataMapping } from "./docs";
 import { GlobalItem, Item, LocalItem, MainItem } from "./parser-item";
 import { GlobalItemTag, ItemType, LocalItemTag, MainItemTag } from "./values";
 
@@ -24,7 +24,7 @@ const dataFormatters = {
     [MainItemTag.Feature]: toBinary,
   },
   [ItemType.Global]: {
-    [GlobalItemTag.UsagePage]: toHex,
+    [GlobalItemTag.UsagePage]: (data: number) => (usagePageDataMapping as any)[data] ?? toHex(data),
     [GlobalItemTag.LogicalMinimum]: toDecimal,
     [GlobalItemTag.LogicalMaximum]: toDecimal,
     [GlobalItemTag.PhysicalMinimum]: toDecimal,
@@ -53,10 +53,18 @@ const dataFormatters = {
 
 export const explainItem = (item: Item) => {
   const type = itemTypeDocMapping[item.type];
-  const tag = getTagDoc(item);
+  const tag = getTagDoc(item).replace(/ /g, '');
 
   const dataValue = item.dataTokens.reduce((prev, curr) => prev << 8 | curr.value, 0)
   const data = (dataFormatters as any)[item.type][item.rawTag]?.(dataValue) ?? "N/A";
 
   return `${type}::${tag} = ${data}`;
+}
+
+export const explainUsage = (usagePage: UsagePage, usage?: number) => {
+  if (usage === undefined) return toHex(usagePage);
+  const usageDoc = (usageDataMapping as any)[usagePage]?.[usage] as string | undefined;
+
+  if (usageDoc) return `${usagePageDataMapping[usagePage].replace(/ /g, '')}/${usageDoc.replace(/ /g, '')}`;
+  else return `${usagePageDataMapping[usagePage]}: ${toHex(usage)}`;
 }

@@ -1,6 +1,7 @@
+import _ from "lodash";
 import { explainItem } from "./explain-item";
-import { Item, LocalItem, MainItem, TokenWithValue } from "./parser-item";
-import { ItemType, LocalItemTag, MainItemTag } from "./values";
+import { GlobalItem, Item, LocalItem, MainItem, TokenWithValue } from "./parser-item";
+import { GlobalItemTag, ItemType, MainItemTag } from "./values";
 
 export enum NodeType {
   Collection,
@@ -15,6 +16,7 @@ export const nodeTypeDocMapping = {
 export interface Node {
   type: NodeType;
   parent?: Node;
+  items: Item[];
 }
 
 export interface CollectionNode extends Node {
@@ -24,7 +26,6 @@ export interface CollectionNode extends Node {
 
 export interface ReportNode extends Node {
   type: NodeType.Report;
-  items: Item[];
 
   usages: any[];
 }
@@ -33,9 +34,46 @@ export interface TokenWithReference extends TokenWithValue {
   reference: Node;
 }
 
+export class StateManager {
+  global: Partial<Record<GlobalItemTag, Item>> = {}
+  local: LocalItem[] = [];
+
+  pushGlobal(item: GlobalItem) {
+    if ([GlobalItemTag.Push, GlobalItemTag.Pop].includes(item.globalTag))
+      throw new Error(`cannot append push/pop to global state`);
+
+    const tag = item.globalTag;
+    this.global[tag] = item;
+  }
+
+  pushLocal(item: LocalItem) {
+    this.local.push(item);
+  }
+
+  push(item: Item) {
+    if (item.type === ItemType.Global) {
+      this.pushGlobal(item as GlobalItem);
+    } else if (item.type === ItemType.Local) {
+      this.pushLocal(item as LocalItem);
+    } else {
+      throw new Error(`cannot push main item to state`);
+    }
+  }
+
+  freeze(): Item[] {
+    const global = _.values(this.global);
+    const local = _.values(this.local);
+    return [...global, ...local]
+  }
+
+  clear() {
+    this.local = [];
+  }
+}
+
 export class ReportParser {
   items: Item[] = [];
-  state: Item[] = [];
+  state = new StateManager();
 
   reflecteTokens: TokenWithReference[] = [];
   root?: Node;
@@ -72,7 +110,7 @@ export class ReportParser {
       case MainItemTag.Input:
       case MainItemTag.Output:
       case MainItemTag.Feature:
-        this.buildNode();
+        this.buildNode(item);
         break;
       case MainItemTag.Collection:
         this.enterCollection();
@@ -85,16 +123,13 @@ export class ReportParser {
     }
   }
 
-  buildNode() {
+  buildNode(item: MainItem) {
     const report: ReportNode = {
       type: NodeType.Report,
-      items: [...this.state],
-      usages: this.state
-        .filter(i => i.type === ItemType.Local)
-        .map(i => i as LocalItem)
-        .filter(i => i.localTag === LocalItemTag.Usage)
+      items: [...this.state.freeze(), item],
+      usages: []
     };
-    this.state = this.state.filter(i => i.type === ItemType.Global);
+    this.state.clear();
 
     if (this.stack.length === 0)
       throw new Error("add report to collection while collection does not exist");
@@ -107,7 +142,9 @@ export class ReportParser {
     const collection: CollectionNode = {
       type: NodeType.Collection,
       children: [],
+      items: this.state.freeze()
     };
+    this.state.clear();
 
     if (this.stack.length === 0) {
       if (this.root) throw new Error("root already exists");
@@ -130,12 +167,11 @@ export class ReportParser {
 
   log(node: Node) {
     const walk: (_: Node) => any = (node) => {
+      node.items.forEach(v => console.log(explainItem(v)))
       if (node.type === NodeType.Collection) {
         (node as CollectionNode).children.forEach(n => {
           console.group(); walk(n); console.groupEnd();
         });
-      } else if (node.type === NodeType.Report) {
-        (node as ReportNode).items.forEach(v => console.log(explainItem(v)))
       }
     }
     walk(node);

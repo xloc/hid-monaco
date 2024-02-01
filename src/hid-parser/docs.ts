@@ -134,4 +134,53 @@ export const inputOutputFeatureData: BitField[] = [
   }
 ];
 
+export const usagePageDataMapping: Record<UsagePage, string> = {
+  0x01: "Generic Desktop Controls",
+  0x02: "Simulation Controls",
+  0x03: "VR Controls",
+  0x04: "Sport Controls",
+  0x05: "Game Controls",
+  0x06: "Generic Device Controls",
+  0x07: "Keyboard/Keypad",
+  0x08: "LED",
+  0x09: "Button",
+  0x0A: "Ordinal",
+  0x0B: "Telephony",
+  0x0C: "Consumer",
+  0x0D: "Digitizer",
+  0x0E: "Haptics",
+  0x0F: "Physical Interface Device",
+  0x10: "Unicode",
+}
 
+export enum UsagePage {
+  GenericDesktopControls = 0x01,
+  SimulationControls = 0x02,
+  VRControls = 0x03,
+  SportControls = 0x04,
+  GameControls = 0x05,
+  GenericDeviceControls = 0x06,
+  KeyboardKeypad = 0x07,
+  LED = 0x08,
+  Button = 0x09,
+  Ordinal = 0x0A,
+  Telephony = 0x0B,
+  Consumer = 0x0C,
+  Digitizer = 0x0D,
+  Haptics = 0x0E,
+  PhysicalInterfaceDevice = 0x0F,
+  Unicode = 0x10,
+}
+
+export const usageDataMapping = {
+  [UsagePage.GenericDesktopControls]: {
+    0x01: "Pointer",
+    0x02: "Mouse",
+    0x04: "Joystick",
+    0x05: "Game Pad",
+    0x06: "Keyboard",
+    0x07: "Keypad",
+    0x08: "Multi-axis Controller",
+    0x09: "Tablet PC System Controls",
+  }
+} as const
