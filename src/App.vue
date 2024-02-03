@@ -19,10 +19,14 @@ onMounted(() => {
   ]
   dispose = () => disposers.forEach((d) => d.dispose());
 
-  monaco.editor.create(editor.value, {
-    value: example,
+  const text = localStorage.getItem('hid-descriptor-content') ?? example;
+  const e = monaco.editor.create(editor.value, {
+    value: text,
     language: "hid-descriptor",
     automaticLayout: true,
+  });
+  e.getModel()?.onDidChangeContent(() => {
+    localStorage.setItem('hid-descriptor-content', e.getValue());
   });
 
   format();
