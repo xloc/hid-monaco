@@ -49,9 +49,9 @@ export class HIDDescriptorProvider implements monaco.languages.DocumentFormattin
   }
 
   provideHover(
-    model: monaco.editor.ITextModel,
+    _model: monaco.editor.ITextModel,
     position: monaco.Position,
-    cancellationToken: monaco.CancellationToken
+    _cancellationToken: monaco.CancellationToken
   ): monaco.languages.ProviderResult<monaco.languages.Hover> {
     if (!this.parser) return undefined;
 
@@ -102,8 +102,8 @@ export class HIDDescriptorProvider implements monaco.languages.DocumentFormattin
 
   provideDocumentFormattingEdits(
     model: monaco.editor.ITextModel,
-    options: monaco.languages.FormattingOptions,
-    token: monaco.CancellationToken
+    _options: monaco.languages.FormattingOptions,
+    _token: monaco.CancellationToken
   ): monaco.languages.ProviderResult<monaco.languages.TextEdit[]> {
     const text = model.getLinesContent();
     const tokens = [...tokenGenerator(text)];
@@ -116,7 +116,11 @@ export class HIDDescriptorProvider implements monaco.languages.DocumentFormattin
 
     const reports = new ReportParser(items.items);
     reports.parse();
-    reports.log(reports.root!);
+    reports.roots.forEach(root => {
+      console.groupCollapsed();
+      reports.log(root);
+      console.groupEnd();
+    });
 
     return undefined;
   }

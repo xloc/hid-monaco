@@ -76,7 +76,7 @@ export class ReportParser {
   state = new StateManager();
 
   reflecteTokens: TokenWithReference[] = [];
-  root?: Node;
+  roots: Node[] = [];
   stack: CollectionNode[] = [];
 
   constructor(items: Item[]) {
@@ -147,8 +147,7 @@ export class ReportParser {
     this.state.clear();
 
     if (this.stack.length === 0) {
-      if (this.root) throw new Error("root already exists");
-      this.root = collection;
+      this.roots.push(collection);
     } else {
       const parent = this.stack[this.stack.length - 1];
       collection.parent = parent;
