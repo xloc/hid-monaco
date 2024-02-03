@@ -1,5 +1,4 @@
 import _ from "lodash";
-import { explainItem } from "./explain-item";
 import { GlobalItem, Item, LocalItem, MainItem, TokenWithValue } from "./parser-item";
 import { GlobalItemTag, ItemType, MainItemTag } from "./values";
 
@@ -162,17 +161,5 @@ export class ReportParser {
       const enclosed = this.stack[this.stack.length - 1];
       enclosed.children.push(exited);
     }
-  }
-
-  log(node: Node) {
-    const walk: (_: Node) => any = (node) => {
-      node.items.forEach(v => console.log(explainItem(v)))
-      if (node.type === NodeType.Collection) {
-        (node as CollectionNode).children.forEach(n => {
-          console.group(); walk(n); console.groupEnd();
-        });
-      }
-    }
-    walk(node);
   }
 }

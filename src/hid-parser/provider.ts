@@ -4,6 +4,7 @@ import { GlobalItem, Item, ItemParser, LocalItem, MainItem } from "./parser-item
 import { Token, tokenGenerator } from "./lexer";
 import { ItemType, MainItemTag } from "./values";
 import { ReportParser } from "./parser-report";
+import { logHIDNode } from "./explain-item";
 
 
 const getTagDoc = (item: Item) => {
@@ -118,7 +119,7 @@ export class HIDDescriptorProvider implements monaco.languages.DocumentFormattin
     reports.parse();
     reports.roots.forEach(root => {
       console.groupCollapsed();
-      reports.log(root);
+      logHIDNode(root);
       console.groupEnd();
     });
 

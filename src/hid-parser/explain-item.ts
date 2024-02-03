@@ -1,6 +1,8 @@
 import { UsagePage, globalItemTagDocMapping, itemTypeDocMapping, localItemTagDocMapping, mainItemTagDocMapping, usageDataMapping, usagePageDataMapping } from "./docs";
 import { GlobalItem, Item, LocalItem, MainItem } from "./parser-item";
+import { CollectionNode, Node, NodeType } from './parser-report';
 import { GlobalItemTag, ItemType, LocalItemTag, MainItemTag } from "./values";
+
 
 const getTagDoc = (item: Item) => {
   switch (item.type) {
@@ -67,4 +69,16 @@ export const explainUsage = (usagePage: UsagePage, usage?: number) => {
 
   if (usageDoc) return `${usagePageDataMapping[usagePage].replace(/ /g, '')}/${usageDoc.replace(/ /g, '')}`;
   else return `${usagePageDataMapping[usagePage]}: ${toHex(usage)}`;
+}
+
+export const logHIDNode = (node: Node) => {
+  const walk: (_: Node) => any = (node) => {
+    node.items.forEach(v => console.log(explainItem(v)))
+    if (node.type === NodeType.Collection) {
+      (node as CollectionNode).children.forEach(n => {
+        console.group(); walk(n); console.groupEnd();
+      });
+    }
+  }
+  walk(node);
 }
