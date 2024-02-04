@@ -3,8 +3,7 @@ import { globalItemTagDocMapping, inputOutputFeatureData, itemSizeDocMapping, it
 import { GlobalItem, Item, ItemParser, LocalItem, MainItem } from "./parser-item";
 import { Token, tokenGenerator } from "./lexer";
 import { ItemType, MainItemTag } from "./values";
-import { ReportParser } from "./parser-report";
-import { logHIDNode } from "./explain-item";
+import { ReportParser, logHIDNode } from "./parser-report";
 
 
 const getTagDoc = (item: Item) => {

@@ -24,6 +24,7 @@ export interface Item {
   size: ItemSize;
   type: ItemType;
   rawTag: number;
+  data: number;
 }
 
 export interface MainItem extends Item {
@@ -41,6 +42,10 @@ export interface LocalItem extends Item {
   localTag: LocalItemTag;
 }
 
+
+const tokensToValue = (tokens: TokenWithValue[]) => {
+  return tokens.reduce((prev, curr) => prev << 8 | curr.value, 0);
+}
 
 export class ItemParser {
   tokens: TokenWithValue[];
@@ -87,13 +92,15 @@ export class ItemParser {
       case MainItemTag.Output:
       case MainItemTag.Feature:
       case MainItemTag.Collection:
+        const dataTokens = this.tokens.splice(0, size);
         return {
           prefixToken: prefix,
-          dataTokens: this.tokens.splice(0, size),
+          dataTokens,
           size: size,
           type: ItemType.Main,
           rawTag: tag,
-          mainTag: tag
+          mainTag: tag,
+          data: tokensToValue(dataTokens),
         }
       default:
         throw new Error(`Unknown main tag value=${tag}`);
@@ -114,13 +121,15 @@ export class ItemParser {
       case GlobalItemTag.ReportCount:
       case GlobalItemTag.Push:
       case GlobalItemTag.Pop:
+        const dataTokens = this.tokens.splice(0, size);
         return {
           prefixToken: prefix,
-          dataTokens: this.tokens.splice(0, size),
+          dataTokens: dataTokens,
           size: size,
           type: ItemType.Global,
           rawTag: tag,
-          globalTag: tag
+          globalTag: tag,
+          data: tokensToValue(dataTokens),
         }
       default:
         throw new Error(`Unknown global tag value=${tag}`);
@@ -138,13 +147,15 @@ export class ItemParser {
       case LocalItemTag.StringMinimum:
       case LocalItemTag.StringMaximum:
       case LocalItemTag.Delimiter:
+        const dataTokens = this.tokens.splice(0, size);
         return {
           prefixToken: prefix,
-          dataTokens: this.tokens.splice(0, size),
+          dataTokens: dataTokens,
           size: size,
           type: ItemType.Local,
           rawTag: tag,
-          localTag: tag
+          localTag: tag,
+          data: tokensToValue(dataTokens),
         }
       default:
         throw new Error(`Unknown local tag value=${tag}`);

@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { GlobalItem, Item, LocalItem, MainItem, TokenWithValue } from "./parser-item";
-import { GlobalItemTag, ItemType, MainItemTag } from "./values";
+import { GlobalItemTag, ItemType, LocalItemTag, MainItemTag } from "./values";
+import { explainItem, explainUsage } from "./explain-item";
 
 export enum NodeType {
   Collection,
@@ -16,6 +17,8 @@ export interface Node {
   type: NodeType;
   parent?: Node;
   items: Item[];
+
+  usagePageItem?: GlobalItem;
 }
 
 export interface CollectionNode extends Node {
@@ -34,7 +37,7 @@ export interface TokenWithReference extends TokenWithValue {
 }
 
 export class StateManager {
-  global: Partial<Record<GlobalItemTag, Item>> = {}
+  global: Partial<Record<GlobalItemTag, GlobalItem>> = {}
   local: LocalItem[] = [];
 
   pushGlobal(item: GlobalItem) {
@@ -125,8 +128,10 @@ export class ReportParser {
   buildNode(item: MainItem) {
     const report: ReportNode = {
       type: NodeType.Report,
+      parent: this.stack[this.stack.length - 1],
       items: [...this.state.freeze(), item],
-      usages: []
+      usagePageItem: this.state.global[GlobalItemTag.UsagePage],
+      usages: [],
     };
     this.state.clear();
 
@@ -140,8 +145,10 @@ export class ReportParser {
   enterCollection() {
     const collection: CollectionNode = {
       type: NodeType.Collection,
+      parent: this.stack[this.stack.length - 1],
+      items: this.state.freeze(),
+      usagePageItem: this.state.global[GlobalItemTag.UsagePage],
       children: [],
-      items: this.state.freeze()
     };
     this.state.clear();
 
@@ -163,3 +170,36 @@ export class ReportParser {
     }
   }
 }
+
+
+
+const usageToString = (node: Node, item: LocalItem) => {
+  if (item.localTag !== LocalItemTag.Usage)
+    throw new Error("item is not usage");
+  if (!node.usagePageItem)
+    throw new Error("node does not have usage page item");
+
+  const doc = explainUsage(node.usagePageItem.data, item.data);
+  return doc
+}
+
+const itemToString = (wrappingNode: Node, item: Item) => {
+  let doc = explainItem(item);
+  if (item.type === ItemType.Local && (item as LocalItem).localTag === LocalItemTag.Usage) {
+    doc += ` (${usageToString(wrappingNode, item as LocalItem)})`;
+  }
+  return doc;
+}
+
+export const logHIDNode = (node: Node) => {
+  const walk: (_: Node) => any = (node) => {
+    node.items.forEach(v => console.log(itemToString(node, v)))
+    if (node.type === NodeType.Collection) {
+      (node as CollectionNode).children.forEach(n => {
+        console.group(); walk(n); console.groupEnd();
+      });
+    }
+  }
+  walk(node);
+}
+

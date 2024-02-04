@@ -1,6 +1,5 @@
 import { UsagePage, globalItemTagDocMapping, itemTypeDocMapping, localItemTagDocMapping, mainItemTagDocMapping, usageDataMapping, usagePageDataMapping } from "./docs";
 import { GlobalItem, Item, LocalItem, MainItem } from "./parser-item";
-import { CollectionNode, Node, NodeType } from './parser-report';
 import { GlobalItemTag, ItemType, LocalItemTag, MainItemTag } from "./values";
 
 
@@ -57,7 +56,7 @@ export const explainItem = (item: Item) => {
   const type = itemTypeDocMapping[item.type];
   const tag = getTagDoc(item).replace(/ /g, '');
 
-  const dataValue = item.dataTokens.reduce((prev, curr) => prev << 8 | curr.value, 0)
+  const dataValue = item.dataTokens.reverse().reduce((prev, curr) => prev << 8 | curr.value, 0)
   const data = (dataFormatters as any)[item.type][item.rawTag]?.(dataValue) ?? "N/A";
 
   return `${type}::${tag} = ${data}`;
@@ -67,18 +66,6 @@ export const explainUsage = (usagePage: UsagePage, usage?: number) => {
   if (usage === undefined) return toHex(usagePage);
   const usageDoc = (usageDataMapping as any)[usagePage]?.[usage] as string | undefined;
 
-  if (usageDoc) return `${usagePageDataMapping[usagePage].replace(/ /g, '')}/${usageDoc.replace(/ /g, '')}`;
+  if (usageDoc) return `${usageDoc.replace(/ /g, '')}`;
   else return `${usagePageDataMapping[usagePage]}: ${toHex(usage)}`;
-}
-
-export const logHIDNode = (node: Node) => {
-  const walk: (_: Node) => any = (node) => {
-    node.items.forEach(v => console.log(explainItem(v)))
-    if (node.type === NodeType.Collection) {
-      (node as CollectionNode).children.forEach(n => {
-        console.group(); walk(n); console.groupEnd();
-      });
-    }
-  }
-  walk(node);
 }
